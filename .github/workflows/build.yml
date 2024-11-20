@@ -25,30 +25,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         id: create_release
 
-  build_windows:
-    needs: [create_release]
-    runs-on: windows-latest
-    env:
-      BOOTSTRAP_URL: https://raw.githubusercontent.com/danielga/garrysmod_common/master/build/bootstrap.ps1
-      BUILD_SCRIPT: ./dependencies/garrysmod_common/build/build.ps1
-      COMPILER_PLATFORM: vs2022
-      PROJECT_OS: windows
-      PREMAKE5: ./dependencies/windows/premake-core/premake5.exe
-      PREMAKE5_URL: https://github.com/danielga/garrysmod_common/releases/download/premake-build%2F5.0.0-beta2/premake-5.0.0-beta2-windows.zip
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: |
-          Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("$env:BOOTSTRAP_URL"))
-          & "$env:BUILD_SCRIPT"
-      - name: Upload release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/v')
-        with:
-          tag_name: ${{ needs.create_release.outputs.tag-name }}
-          fail_on_unmatched_files: true
-          files: "**/Release/**/*.dll"
-
   build_linux:
     needs: [create_release]
     runs-on: ubuntu-latest
@@ -69,36 +45,9 @@ jobs:
       - name: Build
         run: |
           set -ex
-          sudo apt-get -y install gcc-multilib g++-multilib
+          sudo apt-get -y install g++-9 gcc-multilib g++-multilib libstdc++-9-dev
           curl -f -s -L "$BOOTSTRAP_URL" | bash -x
           $BUILD_SCRIPT
-      - name: Upload release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/v')
-        with:
-          tag_name: ${{ needs.create_release.outputs.tag-name }}
-          fail_on_unmatched_files: true
-          files: "**/Release/**/*.dll"
-
-  build_macos:
-    needs: [create_release]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        env:
-          AR: ar
-        run: |
-          set -ex
-
-          brew install premake make
-          rm -rf "${DEPENDENCIES}" && mkdir -p "${DEPENDENCIES}"
-          git clone --branch "${GARRYSMOD_COMMON_BRANCH}" --depth 1 "${GARRYSMOD_COMMON_REPOSITORY}" "${GARRYSMOD_COMMON}"
-          pushd "${GARRYSMOD_COMMON}" && git submodule update --init --recursive && popd
-
-          premake5 --os=macosx gmake
-          cd projects/macosx/gmake
-          gmake config=release_x86_64
       - name: Upload release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
