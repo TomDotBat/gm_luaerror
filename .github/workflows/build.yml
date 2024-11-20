@@ -45,7 +45,7 @@ jobs:
       - name: Build
         run: |
           set -ex
-          sudo apt-get -y install g++-9 gcc-multilib g++-multilib libstdc++-9-dev
+          sudo apt-get -y install gcc-9 g++-9 gcc-multilib g++-multilib libstdc++-9-dev build-essential
           curl -f -s -L "$BOOTSTRAP_URL" | bash -x
           $BUILD_SCRIPT
       - name: Upload release
